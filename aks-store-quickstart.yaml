@@ -14,7 +14,7 @@ spec:
         app: rabbitmq
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: rabbitmq
         image: mcr.microsoft.com/mirror/docker/library/rabbitmq:3.10-management-alpine
@@ -25,9 +25,9 @@ spec:
           name: rabbitmq-http
         env:
         - name: RABBITMQ_DEFAULT_USER
-          value: "username"
+          value: username
         - name: RABBITMQ_DEFAULT_PASS
-          value: "password"
+          value: password
         resources:
           requests:
             cpu: 10m
@@ -39,6 +39,18 @@ spec:
         - name: rabbitmq-enabled-plugins
           mountPath: /etc/rabbitmq/enabled_plugins
           subPath: enabled_plugins
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
       volumes:
       - name: rabbitmq-enabled-plugins
         configMap:
@@ -49,11 +61,12 @@ spec:
 ---
 apiVersion: v1
 data:
-  rabbitmq_enabled_plugins: |
-    [rabbitmq_management,rabbitmq_prometheus,rabbitmq_amqp1_0].
+  rabbitmq_enabled_plugins: '[rabbitmq_management,rabbitmq_prometheus,rabbitmq_amqp1_0].
+
+    '
 kind: ConfigMap
 metadata:
-  name: rabbitmq-enabled-plugins            
+  name: rabbitmq-enabled-plugins
 ---
 apiVersion: v1
 kind: Service
@@ -63,12 +76,12 @@ spec:
   selector:
     app: rabbitmq
   ports:
-    - name: rabbitmq-amqp
-      port: 5672
-      targetPort: 5672
-    - name: rabbitmq-http
-      port: 15672
-      targetPort: 15672
+  - name: rabbitmq-amqp
+    port: 5672
+    targetPort: 5672
+  - name: rabbitmq-http
+    port: 15672
+    targetPort: 15672
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -86,7 +99,7 @@ spec:
         app: order-service
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: order-service
         image: ghcr.io/azure-samples/aks-store-demo/order-service:latest
@@ -94,17 +107,17 @@ spec:
         - containerPort: 3000
         env:
         - name: ORDER_QUEUE_HOSTNAME
-          value: "rabbitmq"
+          value: rabbitmq
         - name: ORDER_QUEUE_PORT
-          value: "5672"
+          value: '5672'
         - name: ORDER_QUEUE_USERNAME
-          value: "username"
+          value: username
         - name: ORDER_QUEUE_PASSWORD
-          value: "password"
+          value: password
         - name: ORDER_QUEUE_NAME
-          value: "orders"
+          value: orders
         - name: FASTIFY_ADDRESS
-          value: "0.0.0.0"
+          value: 0.0.0.0
         resources:
           requests:
             cpu: 1m
@@ -136,14 +149,17 @@ spec:
       initContainers:
       - name: wait-for-rabbitmq
         image: busybox
-        command: ['sh', '-c', 'until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;']
+        command:
+        - sh
+        - -c
+        - until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;
         resources:
           requests:
             cpu: 1m
             memory: 50Mi
           limits:
             cpu: 75m
-            memory: 128Mi    
+            memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
@@ -173,15 +189,15 @@ spec:
         app: product-service
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: product-service
         image: ghcr.io/azure-samples/aks-store-demo/product-service:latest
         ports:
         - containerPort: 3002
-        env: 
+        env:
         - name: AI_SERVICE_URL
-          value: "http://ai-service:5001/"
+          value: http://ai-service:5001/
         resources:
           requests:
             cpu: 1m
@@ -232,18 +248,18 @@ spec:
         app: store-front
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: store-front
         image: ghcr.io/azure-samples/aks-store-demo/store-front:latest
         ports:
         - containerPort: 8080
           name: store-front
-        env: 
+        env:
         - name: VUE_APP_ORDER_SERVICE_URL
-          value: "http://order-service:3000/"
+          value: http://order-service:3000/
         - name: VUE_APP_PRODUCT_SERVICE_URL
-          value: "http://product-service:3002/"
+          value: http://product-service:3002/
         resources:
           requests:
             cpu: 1m
