@@ -14,7 +14,7 @@ spec:
         app: mongodb
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: mongodb
         image: mcr.microsoft.com/mirror/docker/library/mongo:4.2
@@ -29,13 +29,17 @@ spec:
             cpu: 25m
             memory: 1024Mi
         livenessProbe:
-          exec:
-            command:
-            - mongosh
-            - --eval
-            - db.runCommand('ping').ok
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 20
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
           initialDelaySeconds: 5
-          periodSeconds: 5
+          periodSeconds: 10
 ---
 apiVersion: v1
 kind: Service
@@ -46,12 +50,13 @@ spec:
   - port: 27017
   selector:
     app: mongodb
-  type: ClusterIP    
+  type: ClusterIP
 ---
 apiVersion: v1
 data:
-  rabbitmq_enabled_plugins: |
-    [rabbitmq_management,rabbitmq_prometheus,rabbitmq_amqp1_0].
+  rabbitmq_enabled_plugins: '[rabbitmq_management,rabbitmq_prometheus,rabbitmq_amqp1_0].
+
+    '
 kind: ConfigMap
 metadata:
   name: rabbitmq-enabled-plugins
@@ -72,7 +77,7 @@ spec:
         app: rabbitmq
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: rabbitmq
         image: mcr.microsoft.com/mirror/docker/library/rabbitmq:3.10-management-alpine
@@ -83,9 +88,9 @@ spec:
           name: rabbitmq-http
         env:
         - name: RABBITMQ_DEFAULT_USER
-          value: "username"
+          value: username
         - name: RABBITMQ_DEFAULT_PASS
-          value: "password"
+          value: password
         resources:
           requests:
             cpu: 10m
@@ -113,12 +118,12 @@ spec:
   selector:
     app: rabbitmq
   ports:
-    - name: rabbitmq-amqp
-      port: 5672
-      targetPort: 5672
-    - name: rabbitmq-http
-      port: 15672
-      targetPort: 15672
+  - name: rabbitmq-amqp
+    port: 5672
+    targetPort: 5672
+  - name: rabbitmq-http
+    port: 15672
+    targetPort: 15672
   type: ClusterIP
 ---
 apiVersion: apps/v1
@@ -136,7 +141,7 @@ spec:
         app: order-service
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: order-service
         image: ghcr.io/azure-samples/aks-store-demo/order-service:latest
@@ -144,17 +149,17 @@ spec:
         - containerPort: 3000
         env:
         - name: ORDER_QUEUE_HOSTNAME
-          value: "rabbitmq"
+          value: rabbitmq
         - name: ORDER_QUEUE_PORT
-          value: "5672"
+          value: '5672'
         - name: ORDER_QUEUE_USERNAME
-          value: "username"
+          value: username
         - name: ORDER_QUEUE_PASSWORD
-          value: "password"
+          value: password
         - name: ORDER_QUEUE_NAME
-          value: "orders"
+          value: orders
         - name: FASTIFY_ADDRESS
-          value: "0.0.0.0"
+          value: 0.0.0.0
         resources:
           requests:
             cpu: 1m
@@ -186,14 +191,17 @@ spec:
       initContainers:
       - name: wait-for-rabbitmq
         image: busybox
-        command: ['sh', '-c', 'until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;']
+        command:
+        - sh
+        - -c
+        - until nc -zv rabbitmq 5672; do echo waiting for rabbitmq; sleep 2; done;
         resources:
           requests:
             cpu: 1m
             memory: 50Mi
           limits:
             cpu: 75m
-            memory: 128Mi    
+            memory: 128Mi
 ---
 apiVersion: v1
 kind: Service
@@ -223,7 +231,7 @@ spec:
         app: makeline-service
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: makeline-service
         image: ghcr.io/azure-samples/aks-store-demo/makeline-service:latest
@@ -231,19 +239,19 @@ spec:
         - containerPort: 3001
         env:
         - name: ORDER_QUEUE_URI
-          value: "amqp://rabbitmq:5672"
+          value: amqp://rabbitmq:5672
         - name: ORDER_QUEUE_USERNAME
-          value: "username"
+          value: username
         - name: ORDER_QUEUE_PASSWORD
-          value: "password"
+          value: password
         - name: ORDER_QUEUE_NAME
-          value: "orders"
+          value: orders
         - name: ORDER_DB_URI
-          value: "mongodb://mongodb:27017"
+          value: mongodb://mongodb:27017
         - name: ORDER_DB_NAME
-          value: "orderdb"
+          value: orderdb
         - name: ORDER_DB_COLLECTION_NAME
-          value: "orders"
+          value: orders
         resources:
           requests:
             cpu: 1m
@@ -294,15 +302,15 @@ spec:
         app: product-service
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: product-service
         image: ghcr.io/azure-samples/aks-store-demo/product-service:latest
         ports:
         - containerPort: 3002
-        env: 
+        env:
         - name: AI_SERVICE_URL
-          value: "http://ai-service:5001/"
+          value: http://ai-service:5001/
         resources:
           requests:
             cpu: 1m
@@ -353,18 +361,18 @@ spec:
         app: store-front
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: store-front
         image: ghcr.io/azure-samples/aks-store-demo/store-front:latest
         ports:
         - containerPort: 8080
           name: store-front
-        env: 
+        env:
         - name: VUE_APP_ORDER_SERVICE_URL
-          value: "http://order-service:3000/"
+          value: http://order-service:3000/
         - name: VUE_APP_PRODUCT_SERVICE_URL
-          value: "http://product-service:3002/"
+          value: http://product-service:3002/
         resources:
           requests:
             cpu: 1m
@@ -421,7 +429,7 @@ spec:
         app: store-admin
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: store-admin
         image: ghcr.io/azure-samples/aks-store-demo/store-admin:latest
@@ -430,9 +438,9 @@ spec:
           name: store-admin
         env:
         - name: VUE_APP_PRODUCT_SERVICE_URL
-          value: "http://product-service:3002/"
+          value: http://product-service:3002/
         - name: VUE_APP_MAKELINE_SERVICE_URL
-          value: "http://makeline-service:3001/"
+          value: http://makeline-service:3001/
         resources:
           requests:
             cpu: 1m
@@ -472,7 +480,7 @@ spec:
     targetPort: 8081
   selector:
     app: store-admin
-  type: LoadBalancer  
+  type: LoadBalancer
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -489,7 +497,7 @@ spec:
         app: virtual-customer
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: virtual-customer
         image: ghcr.io/azure-samples/aks-store-demo/virtual-customer:latest
@@ -497,7 +505,7 @@ spec:
         - name: ORDER_SERVICE_URL
           value: http://order-service:3000/
         - name: ORDERS_PER_HOUR
-          value: "100"
+          value: '100'
         resources:
           requests:
             cpu: 1m
@@ -521,7 +529,7 @@ spec:
         app: virtual-worker
     spec:
       nodeSelector:
-        "kubernetes.io/os": linux
+        kubernetes.io/os: linux
       containers:
       - name: virtual-worker
         image: ghcr.io/azure-samples/aks-store-demo/virtual-worker:latest
@@ -529,7 +537,7 @@ spec:
         - name: MAKELINE_SERVICE_URL
           value: http://makeline-service:3001
         - name: ORDERS_PER_HOUR
-          value: "100"
+          value: '100'
         resources:
           requests:
             cpu: 1m
