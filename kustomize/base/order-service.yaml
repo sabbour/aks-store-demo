@@ -12,8 +12,6 @@ spec:
       labels:
         app: order-service
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: order-service
         image: ghcr.io/azure-samples/aks-store-demo/order-service:latest

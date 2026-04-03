@@ -13,8 +13,6 @@ spec:
       labels:
         app: mongodb
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: mongodb
         image: mcr.microsoft.com/mirror/docker/library/mongo:4.2

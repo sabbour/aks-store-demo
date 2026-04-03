@@ -21,8 +21,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: rabbitmq
         image: mcr.microsoft.com/mirror/docker/library/rabbitmq:3.10-management-alpine

@@ -13,8 +13,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: rabbitmq
         image: mcr.microsoft.com/mirror/docker/library/rabbitmq:3.10-management-alpine
@@ -85,8 +83,6 @@ spec:
       labels:
         app: order-service
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: order-service
         image: ghcr.io/azure-samples/aks-store-demo/order-service:latest
@@ -172,8 +168,6 @@ spec:
       labels:
         app: product-service
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: product-service
         image: ghcr.io/azure-samples/aks-store-demo/product-service:latest
@@ -231,8 +225,6 @@ spec:
       labels:
         app: store-front
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: store-front
         image: ghcr.io/azure-samples/aks-store-demo/store-front:latest

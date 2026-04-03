@@ -13,8 +13,6 @@ spec:
       labels:
         app: mongodb
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: mongodb
         image: mcr.microsoft.com/mirror/docker/library/mongo:4.2
@@ -71,8 +69,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: rabbitmq
         image: mcr.microsoft.com/mirror/docker/library/rabbitmq:3.10-management-alpine
@@ -135,8 +131,6 @@ spec:
       labels:
         app: order-service
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: order-service
         image: ghcr.io/azure-samples/aks-store-demo/order-service:latest
@@ -222,8 +216,6 @@ spec:
       labels:
         app: makeline-service
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: makeline-service
         image: ghcr.io/azure-samples/aks-store-demo/makeline-service:latest
@@ -293,8 +285,6 @@ spec:
       labels:
         app: product-service
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: product-service
         image: ghcr.io/azure-samples/aks-store-demo/product-service:latest
@@ -352,8 +342,6 @@ spec:
       labels:
         app: store-front
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: store-front
         image: ghcr.io/azure-samples/aks-store-demo/store-front:latest
@@ -420,8 +408,6 @@ spec:
       labels:
         app: store-admin
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: store-admin
         image: ghcr.io/azure-samples/aks-store-demo/store-admin:latest
@@ -488,8 +474,6 @@ spec:
       labels:
         app: virtual-customer
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: virtual-customer
         image: ghcr.io/azure-samples/aks-store-demo/virtual-customer:latest
@@ -505,6 +489,24 @@ spec:
           limits:
             cpu: 1m
             memory: 7Mi
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "test -f /proc/1/status"
+          failureThreshold: 3
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "test -f /proc/1/status"
+          failureThreshold: 5
+          initialDelaySeconds: 3
+          periodSeconds: 3
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -520,8 +522,6 @@ spec:
       labels:
         app: virtual-worker
     spec:
-      nodeSelector:
-        "kubernetes.io/os": linux
       containers:
       - name: virtual-worker
         image: ghcr.io/azure-samples/aks-store-demo/virtual-worker:latest
@@ -537,3 +537,21 @@ spec:
           limits:
             cpu: 1m
             memory: 7Mi
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "test -f /proc/1/status"
+          failureThreshold: 3
+          initialDelaySeconds: 3
+          periodSeconds: 5
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - "test -f /proc/1/status"
+          failureThreshold: 5
+          initialDelaySeconds: 3
+          periodSeconds: 3
